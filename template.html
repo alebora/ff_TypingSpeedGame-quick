@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title> 🏁 Fast & Furious Typing Race</title>
+  <style>
+    body {
+      background: #0c0c0c;
+      color: #8400ff;
+      font-family: 'Courier New', monospace;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 36px;
+      text-shadow: 0 0 8px #8400ff;
+      margin-bottom: 20px;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 90%;
+      max-width: 800px;
+      background: #111;
+      border: 3px solid #8400ff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 0 20px #8000ff40;
+      margin-bottom: 30px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    #targetText {
+      color: rgb(127, 126, 126);
+      white-space: pre-wrap;
+    }
+
+    #typedOverlay {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      bottom: 24px;
+      white-space: pre-wrap;
+      pointer-events: none;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    #typedOverlay span.correct {
+      color: #00ff00;
+    }
+
+    #typedOverlay span.incorrect {
+      color: #ff4444;
+    }
+
+    #typedOverlay span.hack-correct {
+      color: #3399ff;
+    }
+
+    #inputField {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      bottom: 24px;
+      width: calc(100% - 48px);
+      height: calc(100% - 48px);
+      background: transparent;
+      border: none;
+      outline: none;
+      color: transparent;
+      caret-color: #8400ff;
+      font-size: 18px;
+      line-height: 1.6;
+      font-family: inherit;
+      resize: none;
+    }
+
+    #stats {
+      margin-top: 10px;
+      font-size: 20px;
+      text-align: center;
+      text-shadow: 0 0 5px #8400ff;
+    }
+
+    #stats .incomplete {
+      color: #ff4444;
+      text-shadow: 0 0 6px #ff4444;
+    }
+
+    .buttons {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      background-color: #8400ff;
+      color: rgb(255, 255, 255);
+      font-size: 18px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #8000ff80;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #7a00cc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🏁 Fast & Furious Typing Race</h1>
+
+  <div id="gameContainer">
+    <div id="targetText"></div>
+    <div id="typedOverlay"></div>
+    <textarea id="inputField" spellcheck="false" autofocus></textarea>
+  </div>
+
+  <div id="stats"></div>
+  <div class="buttons">
+    <button onclick="restartSame()"> Restart Same Quote</button>
+    <button onclick="restartNew()"> New Quote</button>
+  </div>
+
+  <script>
+    const quotes = [
+      `It doesn't matter if you win by an inch or a mile. Winning's winning. - Dominic Toretto`,
+      `Ask any racer, any real racer. It don't matter if you win by an inch or a mile; winning's winning.`,
+      `I live my life a quarter mile at a time. Nothing else matters. - Dominic Toretto`,
+      `You can have any brew you want... as long as it's a Corona. - Dom`,
+      `The most important thing in life will always be the people in this room. Right here, right now. - Dom`,
+      `Money will come and go. We know that. The most important thing in life will always be family. - Dom`
+    ];
+
+    let quote = quotes[Math.floor(Math.random() * quotes.length)];
+    const inputField = document.getElementById('inputField');
+    const targetText = document.getElementById('targetText');
+    const typedOverlay = document.getElementById('typedOverlay');
+    const stats = document.getElementById('stats');
+
+    let startTime = null;
+    let hackMode = false;
+    let testEnded = false;
+
+    function setQuote(newQuote) {
+      quote = newQuote;
+      targetText.textContent = quote;
+    }
+
+    setQuote(quote);
+
+    document.addEventListener("keydown", (e) => {
+      if (testEnded) return;
+
+      // Activate Hack Mode only on Shift + h (lowercase)
+      if (e.shiftKey && e.key === 'H') {
+        hackMode = true;
+      }
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!testEnded) {
+          endTest();
+        }
+      }
+    });
+
+    inputField.addEventListener('input', () => {
+      if (testEnded) return;
+
+      const typed = inputField.value;
+      if (typed.length === 1 && !startTime) {
+        startTime = new Date().getTime();
+      }
+
+      let display = '';
+      for (let i = 0; i < quote.length; i++) {
+        if (i < typed.length) {
+          const isCorrect = typed[i] === quote[i];
+          const className = isCorrect
+            ? (hackMode ? 'hack-correct' : 'correct')
+            : 'incorrect';
+          display += `<span class="${className}">${quote[i]}</span>`;
+        } else {
+          display += `<span>${quote[i]}</span>`;
+        }
+      }
+      typedOverlay.innerHTML = display;
+
+      if (typed === quote) {
+        endTest();
+      }
+    });
+
+    function endTest() {
+      testEnded = true;
+
+      const endTime = new Date().getTime();
+      const timeTaken = ((endTime - startTime) / 1000) || 1;
+      const typed = inputField.value;
+
+      const quoteWords = quote.trim().split(/\s+/).length;
+      const typedWords = typed.trim().split(/\s+/).length;
+      const words = Math.min(quoteWords, typedWords);
+
+      let correctChars = 0;
+      for (let i = 0; i < typed.length; i++) {
+        if (typed[i] === quote[i]) correctChars++;
+      }
+
+      let wpm = hackMode ? 110 : Math.round(words / (timeTaken / 60));
+      let acc = hackMode ? 100 : Math.round((correctChars / typed.length) * 100);
+
+      const isComplete = typed === quote;
+      const incompleteNote = !isComplete ? `<p class="incomplete">⚠️ Text was incomplete</p>` : "";
+
+      let customFeedback = "";
+      if (isComplete && !hackMode) {
+        if (wpm < 30) {
+          customFeedback = `<p>🚗 You're not even in first gear!</p>`;
+        } else if (wpm < 60) {
+          customFeedback = `<p>🏁 Solid run. Still got room to rev.</p>`;
+        } else {
+          customFeedback = `<p>🏎️ You're living life a quarter mile at a time!</p>`;
+        }
+      }
+
+      stats.innerHTML = `
+        <p>⏱ Time: ${timeTaken.toFixed(2)}s</p>
+        <p>💨 WPM: ${wpm}</p>
+        <p>🎯 Accuracy: ${acc}%</p>
+        ${incompleteNote}
+        ${customFeedback}
+      `;
+
+      inputField.blur();
+      inputField.disabled = true;
+    }
+
+    function restartSame() {
+      inputField.value = '';
+      typedOverlay.innerHTML = '';
+      stats.innerHTML = '';
+      startTime = null;
+      hackMode = false;
+      testEnded = false;
+      inputField.disabled = false;
+      inputField.focus();
+    }
+
+    function restartNew() {
+      const newQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      setQuote(newQuote);
+      restartSame();
+    }
+
+    inputField.focus();
+  </script>
+
+</body>
+</html>
