@@ -21,3 +21,6 @@ This project was created as part of my newly developed **quick one-day projects 
 6. Switch between Light and Dark mode using the toggle button.
 
 Enjoy your typing race and may the fastest typing racers win!
+
+### Demo 
+<img width="1285" alt="fastfurious" src="demoScreenshot.jpg">
